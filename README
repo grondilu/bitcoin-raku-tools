@@ -1,0 +1,15 @@
+libbitcoin-perl6, an attempt to implement the bitcoin protocol in Perl6.
+
+Bitcoin is a decentralised, peer-to-peer electronic currency.  It was
+developped by Satoshi Nakamoto in C++.  This is a set of bitcoin-related
+functions in Perl6, the sixth version of the Perl programming language.
+
+For more information about bitcoin, see http://www.bitcoin.org or search
+the keyword 'bitcoin' with your prefered search engine.
+
+For more information about Perl, see http://www.perl.org.
+For more information about Perl6, see http://www.perl6.org.
+
+See the 'LICENSE' file for copyright information.
+
+THIS SOFTWARE IS PROVIDED WITH NO WARRANTY WHATSOEVER.  USE AT YOUR OWN RISK.
