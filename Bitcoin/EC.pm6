@@ -4,8 +4,8 @@ module Bitcoin::EC;
 class Point {...}
 
 constant $p = 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEFFFFFC2F;
-constant $b = 0x0000000000000000000000000000000000000000000000000000000000000007;
-constant $a = 0x0000000000000000000000000000000000000000000000000000000000000000;
+constant $b = 7;
+constant $a = 0;
 our sub G returns Point {
     Point.new:
     0x79BE667EF9DCBBAC55A06295CE870B07029BFCDB2DCE28D959F2815B16F81798,
@@ -13,23 +13,20 @@ our sub G returns Point {
     :order(0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEBAAEDCE6AF48A03BBFD25E8CD0364141)
 }
 
+multi prefix:<->(Point $u) { Point.new: $u.x, -$u.y % $p, :order($u.order) }
+multi infix:<*>(Point $u, Int $n) { $n * $u }
+
 package Modular {
-    my Int $modulo = $p;
-    our sub inverse(Int $n) returns Int {
-	my Int ($c, $d, $uc, $vc, $ud, $vd) = ($n % $modulo, $modulo, 1, 0, 0, 1);
+    our sub inverse(Int $n, Int $m = $p) returns Int {
+	my Int ($c, $d, $uc, $vc, $ud, $vd) = ($n % $m, $m, 1, 0, 0, 1);
 	my Int $q;
 	while $c != 0 {
 	    ($q, $c, $d) = ($d div $c, $d % $c, $c);
 	    ($uc, $vc, $ud, $vd) = ($ud - $q*$uc, $vd - $q*$vc, $uc, $vc);
 	}
-	return $ud < 0 ?? $ud + $modulo !! $ud;
+	return $ud < 0 ?? $ud + $m !! $ud;
     }
 }
-
-multi prefix:<->(Point $a) { Point.new: $a.x, -$a.y % $p, :order($a.order) }
-multi infix:<+>(Point $a, Point $b) { $a.clone.add($b) }
-multi infix:<*>(Int $n, Point $a) { $a.clone.mult($n) }
-multi infix:<*>(Point $a, Int $n) { $n * $a }
 
 class Point {
     has Int $.x;
@@ -82,4 +79,49 @@ class Point {
 	return self;
     }
 
+}
+
+package DSA {
+    class PublicKey {
+	has Point $.point;
+	method verify(
+	    Buf $h,
+	    Int $r where { 0 < $_ < $p },
+	    Int $s where { 0 < $_ < $p }
+	) {
+	    my $c = Modular::inverse $s, my $order = G.order;
+	    !!! "unexpected product" unless $c * $s % $order == 1;
+	    my @u = map * *$c % $order, reduce(* *256 + *, $h.list), $r;
+	    $_ =
+		G.mult(reduce(* *256 + *, $h.list)*$c % $order).add:
+		$.point.clone.mult: $r*$c % $order;
+	    !!! 'wrong signature' unless .x % $order == $r; 
+	}
+    }
+    class PrivateKey {
+	has Int $.e;
+	method new($e) { self.Mu::new: :e($e) } 
+	method sign(Buf $h) {
+	    # 0. Store the group order
+	    my $order = G.order;
+
+	    # 1. Chose a random modular number k
+	    my Int $rand = reduce * *256+*, map { (256*rand).Int }, ^32;
+	    $rand %= $order;
+
+	    # 2. Compute k * G
+	    my Point $point = G.mult: $rand;
+
+	    # 3. Compute r s
+	    my Int $r = $point.x % $order;
+	    my Int $s =
+	    Modular::inverse($rand, $order) *
+	    ($.e * $r + reduce * *256+*, $h.list) % $order
+	    ;
+
+	    # 4. Return x y
+	    return $r, $s;
+	}
+	method public_key { PublicKey.new: :point(G.mult: $.e) }
+    }
 }
