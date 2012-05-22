@@ -1,0 +1,8 @@
+{
+     "name" : "Bitcoin",
+     "version" : "0.1.0",
+     "description" : "Perl6 bitcoin library.",
+     "author" : "Lucien Grondin",
+     "depends" : [ ],
+     "source-url" : "git://github.com/grondilu/libbitcoin-perl6.git"
+ }
