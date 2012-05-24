@@ -57,13 +57,12 @@ class Data {
     }
     method gist {
 	my $s = encode
-	self.checksum +
-	256**4 * (
+	self.checksum + 256**4 *
+	(
 	    $.version * 2**self.size +
 	    reduce * *256 + *, $.data.list
 	);
-	$s = '1' ~ $s if self.version == 0;
-	return $s;
+	return self.version == 0 ?? '1' ~ $s !! $s;
     }
 }
 
