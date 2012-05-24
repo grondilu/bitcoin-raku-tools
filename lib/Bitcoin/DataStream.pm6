@@ -1,62 +1,65 @@
-class Bitcoin::DataStream is Buf;
-use Bitcoin::Base58;
+class Bitcoin::DataStream;
 
-# Eventually these types will be natively defined in rakudo
-subset BYTE	of int;
-subset CHAR	of int;
-subset UCHAR	of int;
-subset INT16	of int;
-subset UINT16	of int;
-subset INT32	of int;
-subset UINT32	of Int;
-subset INT64	of Int;
-subset UINT64	of Int;
-subset STRING	of Str;
+constant DEBUG = True;
+has Buf $.data is rw;
+has $cursor = 0;
 
-has int $cursor = 0;
+multi method new(Buf $buf?) { self.Mu::new: :data($buf || Buf.new) }
+multi method new(Str $hexdump where /^ <[ 0..9 a..f ]>+ $/) { self.new: pack 'H*', $hexdump }
+
+method write-compact-size(Int $size where * > 0) {
+    $.data ~= pack |
+    do given $size {
+	when * < 253	{ 'C', $_ }
+	when * < 2**16	{ 'CS', 253, $_ }
+	when * < 2**32	{ 'CL', 254, $_ }
+	default		{ 'CQ', 255, $_ }
+    };
+}
 
 method read-compact-size returns Int {
-    given self[$!cursor++] {
-	when 253 { self.read: UINT16 }
-	when 254 { self.read: UINT32 }
-	when 255 { self.read: UINT64 }
-	default { $_ }
+    given $.data[$!cursor++] {
+	when 253 { self.read-uint16 }
+	when 254 { self.read-uint32 }
+	when 255 { self.read-uint64 }
+	default  { $_ }
     }
 }
 
-method write-compact-size(Int $size where { $_ > 0 } ) {
-    self ~=
-    do given $size {
-	when * < 253	{ .Buf }
-	when * < 2**16	{ 253.Buf ~ .Buf: 16 }
-	when * < 2**32	{ 254.Buf ~ .Buf: 32 }
-	default		{ 255.Buf ~ .Buf: 64 }
-    }
-}
-
-#proto method read($) { !!! "empty datastream" unless self.elems; {*} }
-our proto read($) {*}
-
-multi method read(BYTE) { self[self.cursor++] }
-multi method read(INT16) { -128*256	+ self.read: UINT16 }
-multi method read(INT32) { -128*256**3	+ self.read: UINT32 }
-multi method read(INT64) { -128*256**7	+ self.read: UINT64 }
-multi method read(UINT16) {
-    return reduce * *256+*, self[self.cursor «+« ^2];
-    LEAVE { self.cursor += 2 }
-}
-multi method read(UINT32) {
-    return reduce * *256+*, self[self.cursor «+« ^4];
-    LEAVE { self.cursor += 4 }
-}
-multi method read(UINT64) {
-    return reduce * *256+*, self[self.cursor «+« ^2];
-    LEAVE { self.cursor += 8 }
-}
-multi method read(STRING) {
+method read-string {
     my $length = self.read-compact-size;
-    return self[self.cursor «+« ^$length];
-    LEAVE { self.cursor += $length }
+    return $.data.subbuf($!cursor, $!cursor +$length-1).unpack('a*');
+    LEAVE { $!cursor += $length }
 }
 
+multi method write-string(Buf $b) {
+    self.write-compact-size: $b.list.elems;
+    $.data ~= $b;
+}
+multi method write-string(Str $s) {
+    # use bytes;  # NYI
+    self.write-string: Buf.new: $s.ords;
+}
+
+multi method read-byte   	{ Buf.new: $.data[$!cursor++] }
+multi method read-byte($n)	{
+    [~] map {self.read-byte}, ^$n;
+}
+method read-int16  { return Buf.new($.data[$!cursor «+« ^2]).unpack('s'); LEAVE { $!cursor +=2 } }
+method read-uint16 { return Buf.new($.data[$!cursor «+« ^2]).unpack('S'); LEAVE { $!cursor +=2 } }
+method read-int32  { return Buf.new($.data[$!cursor «+« ^4]).unpack('l'); LEAVE { $!cursor +=4 } }
+method read-uint32 { return Buf.new($.data[$!cursor «+« ^4]).unpack('L'); LEAVE { $!cursor +=4 } }
+method read-int64  { return Buf.new($.data[$!cursor «+« ^8]).unpack('q'); LEAVE { $!cursor +=8 } }
+method read-uint64 { return Buf.new($.data[$!cursor «+« ^8]).unpack('Q'); LEAVE { $!cursor +=8 } }
+
+multi method write-byte(@c)   { $.data ~= Buf.new: @c }
+multi method write-byte(Buf $b)   { $.data ~= $b }
+method write-int16($i)  { $.data ~= pack 's', $i }
+method write-uint16($i) { $.data ~= pack 'S', $i }
+method write-int32($i)  { $.data ~= pack 'l', $i }
+method write-uint32($i) { $.data ~= pack 'L', $i }
+method write-int64($i)  { $.data ~= pack 'q', $i }
+method write-uint64($i) { $.data ~= pack 'Q', $i }
+
+method gist { "Bitcoin::DataStream:<{ join(' ', $.data.list) }>" }
 # vim: ft=perl6

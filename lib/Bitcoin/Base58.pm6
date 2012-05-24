@@ -26,15 +26,15 @@ our sub encode(Int $n) returns Str { $n < 58 ?? @B58[$n] !! &?ROUTINE($n div 58)
 
 #| Base class for a versioned, checksumed, base58-encoded data structure.  aka CBase58Data
 class Data {  
-    has Buf $.data;
+    has Buf $.data is rw;
     has $.version;
 
-    method size returns Int {}
-    method default_version returns Int {}
+    method size {}
+    method default_version {}
     method Int returns Int { reduce * *256 + *, self.data.list }
 
     multi method new(Buf $buffer, :$version = self.default_version) {
-	??? "wrong buffer size ({$buffer.elems})" if 8*$buffer.elems != self.size;
+	??? 'wrong buffer size' if 8*$buffer.elems != self.size;
 	self.Mu::new: :data($buffer), :version($version)
     }
     multi method new(Str $base58) {
