@@ -25,25 +25,25 @@ our sub encode(Int $n) returns Str { $n < 58 ?? @B58[$n] !! &?ROUTINE($n div 58)
 }
 
 #| Base class for a versioned, checksumed, base58-encoded data structure.  aka CBase58Data
-class Data {  
+role Data {  
     has Buf $.data;
     has $.version;
 
-    method size {...}
-    method default_version {...}
-    method Int returns Int { reduce * *256 + *, self.data.list }
+    our $.size;
+    our $.default_version;
+    method Int returns Int { reduce * *256 + *, $.data.list }
 
-    multi method new(Buf $buffer, :$version = self.default_version) {
-	??? 'wrong buffer size' if 8*$buffer.elems != self.size;
-	self.bless: *, :data($buffer), :version($version)
+    multi method new(Buf $buffer, :$version?) {
+	??? 'wrong buffer size' if 8*$buffer.elems != $.size;
+	self.bless: *, :data($buffer), :version($version // $.default_version)
     }
     multi method new(Str $base58) {
 	my $n = decode $base58;
-	my $version = $n div 256**4 div 2**self.size;
-	my Int $ndata = $n div 256**4 % 2**self.size;
-	my $new = self.new: $ndata.Buf(self.size div 8);
+	my $version = $n div 256**4 div 2**$.size;
+	my Int $ndata = $n div 256**4 % 2**$.size;
+	my $new = self.new: $ndata.Buf: $.size div 8;
 	my $checksum = $new.checksum;
-	!!! "wrong checksum ({$checksum} <> {$n % 256**4})" unless $checksum == $n % 256**4;
+	!!! "wrong checksum" unless $checksum == $n % 256**4;
 	return $new;
     }
     method checksum returns Int {
@@ -52,17 +52,17 @@ class Data {
 	(
 	    Digest::sha256::core
 	    Digest::sha256::core
-	    Buf.new: $.version, self.data.list
+	    Buf.new: $.version, $.data.list
 	).subbuf(0, 4).list;
     }
     method gist {
 	my $s = encode
 	self.checksum + 256**4 *
 	(
-	    $.version * 2**self.size +
+	    $.version * 2**$.size +
 	    reduce * *256 + *, $.data.list
 	);
-	return self.version == 0 ?? '1' ~ $s !! $s;
+	return $.version == 0 ?? '1' ~ $s !! $s;
     }
 }
 

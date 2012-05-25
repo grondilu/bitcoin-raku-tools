@@ -42,9 +42,7 @@ multi method write-string(Str $s) {
 }
 
 multi method read-byte   	{ Buf.new: $.data[$!cursor++] }
-multi method read-byte($n)	{
-    [~] map {self.read-byte}, ^$n;
-}
+multi method read-byte($n)	{ [~] map {self.read-byte}, ^$n }
 method read-int16  { return Buf.new($.data[$!cursor «+« ^2]).unpack('s'); LEAVE { $!cursor +=2 } }
 method read-uint16 { return Buf.new($.data[$!cursor «+« ^2]).unpack('S'); LEAVE { $!cursor +=2 } }
 method read-int32  { return Buf.new($.data[$!cursor «+« ^4]).unpack('l'); LEAVE { $!cursor +=4 } }
