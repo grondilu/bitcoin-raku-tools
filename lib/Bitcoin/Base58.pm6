@@ -24,7 +24,7 @@ our sub encode(Int $n) returns Str { $n < 58 ?? @B58[$n] !! &?ROUTINE($n div 58)
     }
 }
 
-#| Base class for a versioned, checksumed, base58-encoded data structure.  aka CBase58Data
+#| Base role for a versioned, checksumed, base58-encoded data structure.  aka CBase58Data
 role Data {  
     has Buf $.data;
     has $.version;
