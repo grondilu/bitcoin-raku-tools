@@ -35,11 +35,11 @@ class Point {
     method ^horizon { self.new: Int, Int };
     method is_at_horizon returns Bool { !defined($.x) or !defined($.y) }
     method new(Int $x, Int $y, Int :$order?) {
-	my $new = self.Mu::new: :x($x), :y($y), :order($order);
+	my $new = self.bless: *, :x($x), :y($y), :order($order);
 	!!! "point is not on curve" unless $new.is_at_horizon or ($y**2 - ($x**3 + $a*$x + $b)) %% $p;
 	return $new;
     }
-    method gist { self.is_at_horizon ?? "point at horizon" !! "x: $.x, y: $.y" }
+    method gist { self.is_at_horizon ?? "point at horizon" !! "EC Point at x=$.x, y=$.y" }
     method double returns Point {
 	return self.clone if self.is_at_horizon;
 	my $l = (3*$.x**2 + $a) * Modular::inverse(2 *$.y) % $p;
@@ -100,7 +100,7 @@ package DSA {
     }
     class PrivateKey {
 	has Int $.e;
-	method new($e) { self.Mu::new: :e($e) } 
+	method new(Int $e) { self.bless: *, :e($e) } 
 	method sign(Buf $h) {
 	    # 0. Store the group order
 	    my $order = G.order;

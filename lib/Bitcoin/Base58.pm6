@@ -29,8 +29,6 @@ role Data {
     has Buf $.data;
     has $.version;
 
-    our $.size;
-    our $.default_version;
     method Int returns Int { reduce * *256 + *, $.data.list }
 
     multi method new(Buf $buffer, :$version?) {

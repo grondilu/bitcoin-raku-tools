@@ -1,6 +1,7 @@
 module Bitcoin;
 use Bitcoin::Base58;
 use Bitcoin::EC;
+
 =begin pod
 =TITLE
 
@@ -28,7 +29,8 @@ It allows the user to handle bitcoin keys and addresses.  The main features are:
 =item checksum verification for existing bitcoin addresses ;
 =item creation of new, random private keys ;
 =item computation of the bitcoin address for a given private key ;
-=item easy elliptic curve arithmetics on private keys ;
+=item ECDSA signatures ;
+=item elliptic curve arithmetics on private keys ;
 
 Other features, such as block inspection, are provided by submodules:
 
@@ -67,8 +69,14 @@ at L<http://github.com/grondilu/libdigest-perl6>.
 Not only this is work in progress, but Perl6 itself is in its infancy.  So this
 software really comes with no warranty whatsoever.  USE AT YOUR OWN RISK.
 
+
+
+
 P<file:/usr/local/src/libbitcoin-perl6/COPYRIGHT>
 =end pod
+
+
+
 
 our constant TEST = True;
 our constant GENESIS = TEST ??
@@ -95,16 +103,11 @@ class Address does Bitcoin::Base58::Data {
     }
 }
 
-class Key does Bitcoin::Base58::Data {
+class Key is Bitcoin::EC::DSA::PrivateKey {
+    also does Bitcoin::Base58::Data;
     our $.size = 256;
     our $.default_version = 128;
     multi method new { self.new: Buf.new: map {(^256).pick}, ^32 }
-    method public_point { Bitcoin::EC::G.mult: self.Int }
-    method private_key { Bitcoin::EC::DSA::PrivateKey.new: self.Int }
-    method address returns Address { Address.new: self.public_point }
-    multi method sign(Buf $msg) { self.private_key.sign: $msg }
-    multi method sign(Str $msg) {
-	#use bytes;
-	self.sign: Buf.new: $msg.ords;
-    }
+    method e returns Int { self.Int }
+    method address returns Address { Address.new: self.public_key.point }
 }
