@@ -53,7 +53,8 @@ This class encapsulates a bitcoin transaction.
 This class encapsulates a bitcoin script.
 
 =defn Bitcoin::EC
-This module provides elliptic curve arithmetics in I<secp256k1>.
+This module and its sub-packages provide elliptic curve arithmetics and
+cryptography in I<secp256k1>.
 
 =end DESCRIPTION
 
@@ -75,19 +76,6 @@ software really comes with no warranty whatsoever.  USE AT YOUR OWN RISK.
 P<file:/usr/local/src/libbitcoin-perl6/COPYRIGHT>
 =end pod
 
-
-
-
-our constant TEST = True;
-our constant GENESIS = TEST ??
-'00000007199508e34a9ff81e6ec0c477a4cccff2a4767a8eee39c11db367b008' !!
-'000000000019d6689c085ae165831e934ff763ae46a2a6c172b3f1b60a8ce26f';
-our constant MAX-BLOCK-SIZE	=   1_000_000;
-our constant COIN		= 100_000_000;
-our constant CENT		=   1_000_000;
-our constant MAX-MONEY	=       21e14.Int;
-our constant DEFAULT-PORT	=        8333;
-our constant DUMMY-PASSWD	= 'dummy password';
 
 class Address does Bitcoin::Base58::Data {
     our $.size = 160;

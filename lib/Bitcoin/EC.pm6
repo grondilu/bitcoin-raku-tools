@@ -102,24 +102,26 @@ package DSA {
 	has Int $.e;
 	method new(Int $e) { self.bless: *, :e($e) } 
 	method sign(Buf $h) {
+	    ENTER { $*ERR.print: 'ECDSA signature is going to take some time. Please be patient... ' }
+	    LEAVE { $*ERR.say:   'ok, done.' }
+
 	    # 0. Store the group order
 	    my $order = G.order;
 
 	    # 1. Chose a random modular number k
-	    my Int $rand = reduce * *256+*, map { (256*rand).Int }, ^32;
-	    $rand %= $order;
+	    my Int $k = reduce * *256+*, map { (^256).pick }, ^32;
 
 	    # 2. Compute k * G
-	    my Point $point = G.mult: $rand;
+	    my Point $point = G.mult: $k;
 
 	    # 3. Compute r s
 	    my Int $r = $point.x % $order;
 	    my Int $s =
-	    Modular::inverse($rand, $order) *
+	    Modular::inverse($k, $order) *
 	    ($.e * $r + reduce * *256+*, $h.list) % $order
 	    ;
 
-	    # 4. Return x y
+	    # 4. Return r s
 	    return $r, $s;
 	}
 	method public_key { PublicKey.new: :point(G.mult: $.e) }

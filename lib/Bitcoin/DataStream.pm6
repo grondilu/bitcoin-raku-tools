@@ -1,6 +1,5 @@
 class Bitcoin::DataStream;
 
-constant DEBUG = True;
 has Buf $.data is rw;
 has $cursor = 0;
 
@@ -41,14 +40,14 @@ multi method write-string(Str $s) {
     self.write-string: Buf.new: $s.ords;
 }
 
-multi method read-byte   	{ Buf.new: $.data[$!cursor++] }
-multi method read-byte($n)	{ [~] map {self.read-byte}, ^$n }
-method read-int16  { return Buf.new($.data[$!cursor «+« ^2]).unpack('s'); LEAVE { $!cursor +=2 } }
-method read-uint16 { return Buf.new($.data[$!cursor «+« ^2]).unpack('S'); LEAVE { $!cursor +=2 } }
-method read-int32  { return Buf.new($.data[$!cursor «+« ^4]).unpack('l'); LEAVE { $!cursor +=4 } }
-method read-uint32 { return Buf.new($.data[$!cursor «+« ^4]).unpack('L'); LEAVE { $!cursor +=4 } }
-method read-int64  { return Buf.new($.data[$!cursor «+« ^8]).unpack('q'); LEAVE { $!cursor +=8 } }
-method read-uint64 { return Buf.new($.data[$!cursor «+« ^8]).unpack('Q'); LEAVE { $!cursor +=8 } }
+multi method read-byte { Buf.new: $.data[$!cursor++] }
+multi method read-byte($n) { [~] map {self.read-byte}, ^$n }
+method read-int16  { LEAVE { $!cursor +=2 }; $.data.subbuf($!cursor, 2).unpack('s') }
+method read-uint16 { LEAVE { $!cursor +=2 }; $.data.subbuf($!cursor, 2).unpack('S') }
+method read-int32  { LEAVE { $!cursor +=4 }; $.data.subbuf($!cursor, 4).unpack('l') }
+method read-uint32 { LEAVE { $!cursor +=4 }; $.data.subbuf($!cursor, 4).unpack('L') }
+method read-int64  { LEAVE { $!cursor +=8 }; $.data.subbuf($!cursor, 8).unpack('q') }
+method read-uint64 { LEAVE { $!cursor +=8 }; $.data.subbuf($!cursor, 8).unpack('Q') }
 
 multi method write-byte(@c)   { $.data ~= Buf.new: @c }
 multi method write-byte(Buf $b)   { $.data ~= $b }
@@ -59,5 +58,5 @@ method write-uint32($i) { $.data ~= pack 'L', $i }
 method write-int64($i)  { $.data ~= pack 'q', $i }
 method write-uint64($i) { $.data ~= pack 'Q', $i }
 
-method gist { "Bitcoin::DataStream:<{ join(' ', $.data.list) }>" }
+method gist { "Bitcoin::DataStream:<{ $.data.list.join: ' ' }>" }
 # vim: ft=perl6

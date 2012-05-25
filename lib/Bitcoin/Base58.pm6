@@ -54,13 +54,11 @@ role Data {
 	).subbuf(0, 4).list;
     }
     method gist {
-	my $s = encode
-	self.checksum + 256**4 *
-	(
+	my $s = encode self.checksum + 256**4 * (
 	    $.version * 2**$.size +
 	    reduce * *256 + *, $.data.list
 	);
-	return $.version == 0 ?? '1' ~ $s !! $s;
+	return $.version == 0 ?? "1$s" !! $s;
     }
 }
 
