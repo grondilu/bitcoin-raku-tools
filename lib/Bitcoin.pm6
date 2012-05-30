@@ -87,8 +87,6 @@ Not only this is work in progress, but Perl6 itself is in its infancy.  So this
 software really comes with no warranty whatsoever.  USE AT YOUR OWN RISK.
 
 
-
-
 P<file:/usr/local/src/libbitcoin-perl6/COPYRIGHT>
 =end pod
 

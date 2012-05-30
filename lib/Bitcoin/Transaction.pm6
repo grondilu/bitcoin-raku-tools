@@ -12,9 +12,9 @@ class txOut { has ($.value, $.scriptPubKey) }
 multi method new(Bitcoin::DataStream $stream) {
     self.bless: *, 
     version => $stream.read-int32,						#1
-    txIn => (
-	eager map # eager is needed to ensure sequential evaluation
-	{ 
+    txIn => 
+    eager( # eager is needed to ensure sequential evaluation
+	map { 
 	    txIn.new:
 	    prevout_hash => $stream.read-byte(32),				#3
 	    prevout_n    => $stream.read-uint32,				#4
@@ -22,9 +22,9 @@ multi method new(Bitcoin::DataStream $stream) {
 	    sequence     => $stream.read-uint32,				#6
 	}, ^$stream.read-compact-size						#2
     ),
-    txOut => (
-	eager map # eager is needed to ensure sequential evaluation
-	{
+    txOut => 
+    eager( # eager is needed to ensure sequential evaluation
+	map {
 	    txOut.new:
 	    value        => $stream.read-int64,					#8
 	    scriptPubKey => Bitcoin::Script.new($stream.read-string),		#9
@@ -52,6 +52,6 @@ method serialize {
 	}
 	.write-uint32: $.locktime;						#10
     }
-    return $stream;
+    return $stream.data;
 }
 # vim: ft=perl6

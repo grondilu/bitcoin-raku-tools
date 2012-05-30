@@ -1,7 +1,28 @@
 #!/usr/local/bin/perl6
-# Ellicptic curve module
 module Bitcoin::EC;
 class Point {...}
+
+=begin DESCRIPTION
+
+In short, an elliptic curve is a set of integer coordinates of the plan,
+satisfying an equation of the form:
+
+    2   3
+   y ≡ x  +  a x + b [modulo p]
+
+The parameters a, b and p define the curve.  There are many different possible
+curves, but bitcoin uses only one, named I<secp256k1>.  This module handles
+only this particular curve.
+
+Points of an elliptic curve have a group structure, which is used to define
+exponentiation and thus DSA cryptography.  What is used is actually a cyclical 
+sub-group, whose generator is also a parameter of the named curve.
+
+According to Satoshi, the main advantage of ECDSA is that keys and signatures
+are much shorter for the same cryptographic strength.
+
+=end DESCRIPTION
+
 
 constant $p = 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEFFFFFC2F;
 constant $b = 7;
@@ -126,4 +147,9 @@ package DSA {
 	}
 	method public_key { PublicKey.new: :point(G.mult: $.e) }
     }
+
+}
+
+sub infix:<+>(PrivateKey $a, PrivateKey $b) {
+    PrivateKey.new: $a.e + $b.e;
 }

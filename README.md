@@ -17,6 +17,7 @@ the keyword 'bitcoin' with your prefered search engine.
 For more information about Perl, see http://www.perl.org.
 For more information about Perl6, see http://www.perl6.org.
 
-See the 'LICENSE' file for copyright information.
+This library is free software.  It is released on the same terms as Perl
+itself.  See the 'COPYRIGHT' and 'LICENSE' files for more information.
 
 THIS SOFTWARE IS PROVIDED WITH NO WARRANTY WHATSOEVER.  USE AT YOUR OWN RISK.
