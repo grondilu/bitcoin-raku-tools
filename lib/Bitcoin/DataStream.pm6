@@ -3,7 +3,7 @@ class Bitcoin::DataStream;
 has Buf $.data is rw;
 has $cursor = 0;
 
-multi method new(Buf $buf?) { self.Mu::new: :data($buf || Buf.new) }
+multi method new(Buf $buf?) { self.bless: *, :data($buf || Buf.new) }
 multi method new(Str $hexdump where /^ <[ 0..9 a..f ]>+ $/) { self.new: pack 'H*', $hexdump }
 
 method write-compact-size(Int $size where * > 0) {
@@ -27,7 +27,7 @@ method read-compact-size returns Int {
 
 method read-string {
     my $length = self.read-compact-size;
-    return $.data.subbuf($!cursor, $!cursor +$length-1).unpack('a*');
+    return $.data.subbuf($!cursor, $length).unpack('a*');
     LEAVE { $!cursor += $length }
 }
 
