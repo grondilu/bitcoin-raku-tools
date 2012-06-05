@@ -73,9 +73,28 @@ multi infix:<*>(2, Point:D $point) {
     }
     else { Point.bless: *, :$x, :$y }
 }
-multi infix:<*>(Int $n where $n > 2, Point:D $point) {
-    2 * ($n div 2 * $point) + $n % 2 * $point;
-}
+
+## Were Perl6 a bit faster, we'd do this:
+#multi infix:<*>(Int $n where $n > 2, Point:D $point) {
+#    2 * ($n div 2 * $point) + $n % 2 * $point;
+#}
+
+# But since it is still very slow, we need the following
+# trick to make it possible to use the unix basic calculator
+# for the elliptic curve exponentiation:
+my &mult:($n, $point) :=
+defined(%*ENV<PERL6_EC_METHOD>) && %*ENV<PERL6_EC_METHOD>.uc eq 'BC' ??
+sub ($n, $point) {
+    use Bitcoin::EC::BC;
+    return Point.new:
+    |Bitcoin::EC::BC::compute
+    "mult( $n, {$point.x} * p + {$point.y} )";
+} !!
+sub ($n, $point) {
+    $n == 0|1|2 ?? $n * $point !!
+    2 * &?ROUTINE($n div 2, $point) + $n % 2 * $point
+};
+multi infix:<*>(Int $n where $n > 2, Point:D $point) { mult($n, $point) }
 
 multi infix:<+>(Point:U, Point $b) { $b }
 multi infix:<+>(Point:D $a, Point:U) { $a }
