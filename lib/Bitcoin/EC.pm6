@@ -61,6 +61,8 @@ multi infix:<->(Point $a, Point $b) { $a + -$b }
 
 multi infix:<*>(Point $u, Int $n) { $n * $u }
 multi infix:<*>(Int $n, Point:U) { Point }
+multi infix:<*>(0, Point:D) { Point }
+multi infix:<*>(1, Point:D $point) { $point }
 multi infix:<*>(2, Point:D $point) {
     my Int $l = (3*$point.x**2 + a) * Modular::inverse(2 *$point.y) % p;
     my Int $x = ($l**2 - 2*$point.x) % p;
@@ -71,16 +73,8 @@ multi infix:<*>(2, Point:D $point) {
     }
     else { Point.bless: *, :$x, :$y }
 }
-multi infix:<*>(Int $n, Point:D $point) {
-    my Int ($nnn, $i) = (3*$n, 1);
-    $i *= 2 while $i <= $nnn; $i div= 2;
-    $_ = $point.clone;
-    while ( $i div= 2 ) > 1 {
-	$_ *= 2;
-	if    ($nnn +& $i) != 0 and ($n +& $i) == 0 { $_ += $point }
-	elsif ($nnn +& $i) == 0 and ($n +& $i) != 0 { $_ -= $point }
-    }
-    return $_;
+multi infix:<*>(Int $n where $n > 2, Point:D $point) {
+    2 * ($n div 2 * $point) + $n % 2 * $point;
 }
 
 multi infix:<+>(Point:U, Point $b) { $b }
@@ -138,6 +132,6 @@ package DSA {
 	    # 4. Return r s
 	    return $r, $s;
 	}
-	method public_key { PublicKey.bless: $.e * G }
+	method public_key { PublicKey.bless: $.e * G.clone }
     }
 }
