@@ -1,7 +1,5 @@
 #!/usr/local/bin/perl6
 module Bitcoin::EC;
-class Point {...}
-
 =begin DESCRIPTION
 
 In short, an elliptic curve is a set of integer coordinates of the plan,
@@ -16,29 +14,19 @@ only this particular curve.
 
 Points of an elliptic curve have a group structure, which is used to define
 exponentiation and thus DSA cryptography.  What is used is actually a cyclical 
-sub-group, whose generator is also a parameter of the named curve.
+subgroup, whose generator is also a parameter of the named curve.
 
 According to Satoshi, the main advantage of ECDSA is that keys and signatures
 are much shorter for the same cryptographic strength.
 
 =end DESCRIPTION
 
-
-constant $p = 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEFFFFFC2F;
-constant $b = 7;
-constant $a = 0;
-our sub G returns Point {
-    Point.new:
-    0x79BE667EF9DCBBAC55A06295CE870B07029BFCDB2DCE28D959F2815B16F81798,
-    0x483ada7726a3c4655da4fbfc0e1108a8fd17b448a68554199c47d08ffb10d4b8,
-    :order(0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEBAAEDCE6AF48A03BBFD25E8CD0364141)
-}
-
-multi prefix:<->(Point $u) { Point.new: $u.x, -$u.y % $p, :order($u.order) }
-multi infix:<*>(Point $u, Int $n) { $n * $u }
+constant p = 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEFFFFFC2F;
+constant b = 7;
+constant a = 0;
 
 package Modular {
-    our sub inverse(Int $n, Int $m = $p) returns Int {
+    our sub inverse(Int $n, Int $m = p) returns Int {
 	my Int ($c, $d, $uc, $vc, $ud, $vd) = ($n % $m, $m, 1, 0, 0, 1);
 	my Int $q;
 	while $c != 0 {
@@ -50,90 +38,95 @@ package Modular {
 }
 
 class Point {
-    has Int $.x;
-    has Int $.y;
-    has Int $.order;
-    method ^horizon { self.new: Int, Int };
-    method is_at_horizon returns Bool { !defined($.x) or !defined($.y) }
-    method new(Int $x, Int $y, Int :$order?) {
-	my $new = self.bless: *, :x($x), :y($y), :order($order);
-	!!! "point is not on curve" unless $new.is_at_horizon or ($y**2 - ($x**3 + $a*$x + $b)) %% $p;
-	return $new;
-    }
-    method gist { self.is_at_horizon ?? "point at horizon" !! "EC Point at x=$.x, y=$.y" }
-    method double returns Point {
-	return self.clone if self.is_at_horizon;
-	my $l = (3*$.x**2 + $a) * Modular::inverse(2 *$.y) % $p;
-	my $x = $l**2 - 2*$.x;
-	($!x, $!y) = map { $_ % $p }, $x, $l*($.x - $x) - $.y;
-	$!order div= 2 if defined $.order and $.order %% 2;
-	return self;
-    }
-    method add(Point $point) returns Point {
-	if self.is_at_horizon { return $point }
-	elsif ($.x - $point.x) %% $p {
-	    if ($.y + $point.y) %% $p { $!x = Int }
-	    else { self.double }
-	}
-	else {
-	    my $i = Modular::inverse($point.x - $.x);
-	    my $l = ($point.y - $.y) * $i % $p;
-	    my $x = $l**2 - $.x - $point.x;
-	    ($!x, $!y) = map * % $p, $x, $l*($.x - $x) - $.y;
-	    $!order = Int;
-	}
-	return self;
-    }
-    multi method mult(0) { $!x = $!y = $!order = Int; return self }
-    multi method mult(Int $n is copy where $n > 0) {
-	$n %= $.order if defined $.order;
-	return Point.^horizon if self.is_at_horizon;
-	my $n3 = 3 * $n;
-	my $i = 1; $i *= 2 while $i <= $n3; $i div= 2;
-	$_ = self.clone;
-	while ( $i div= 2 ) > 1 {
-	    .double;
-	    .add( self)	if ($n3 +& $i) != 0 and ($n +& $i) == 0;
-	    .add(-self)	if ($n3 +& $i) == 0 and ($n +& $i) != 0;
-	}
-	($!x, $!y, $!order) = (.x, .y, Int);
-	return self;
-    }
+    has Int ($.x, $.y, $.order);
+    multi method new
+    (
+	Int:D $x,
+	Int:D $y where ($y**2 - ($x**3 + a*$x + b)) %% p,
+	Int :$order?
+    ) { self.bless: *, :x($x % p), :y($y % p), :$order }
+    method gist { defined(self) ?? "EC Point at x=$.x, y=$.y" !! "point at horizon" }
+}
 
+constant G = Point.new:
+0x79BE667EF9DCBBAC55A06295CE870B07029BFCDB2DCE28D959F2815B16F81798,
+0x483ada7726a3c4655da4fbfc0e1108a8fd17b448a68554199c47d08ffb10d4b8,
+:order(0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEBAAEDCE6AF48A03BBFD25E8CD0364141);
+
+multi sub prefix:<->(Point:U) { Point }
+multi sub prefix:<->(Point:D $point) {
+    Point.bless: *, :x($point.x), :y(-$point.y % p), :order($point.order);
+}
+multi infix:<->(Point $a, Point $b) { $a + -$b }
+
+multi infix:<*>(Point $u, Int $n) { $n * $u }
+multi infix:<*>(Int $n, Point:U) { Point }
+multi infix:<*>(2, Point:D $point) {
+    my Int $l = (3*$point.x**2 + a) * Modular::inverse(2 *$point.y) % p;
+    my Int $x = ($l**2 - 2*$point.x) % p;
+    my Int $y = ($l*($point.x - $x) - $point.y) % p;
+    if defined $point.order {
+	Point.bless: *,
+	:$x, :$y, :order($point.order %% 2 ?? $point.order div 2 !! $point.order);
+    }
+    else { Point.bless: *, :$x, :$y }
+}
+multi infix:<*>(Int $n, Point:D $point) {
+    my Int ($nnn, $i) = (3*$n, 1);
+    $i *= 2 while $i <= $nnn; $i div= 2;
+    $_ = $point.clone;
+    while ( $i div= 2 ) > 1 {
+	$_ *= 2;
+	if    ($nnn +& $i) != 0 and ($n +& $i) == 0 { $_ += $point }
+	elsif ($nnn +& $i) == 0 and ($n +& $i) != 0 { $_ -= $point }
+    }
+    return $_;
+}
+
+multi infix:<+>(Point:U, Point $b) { $b }
+multi infix:<+>(Point:D $a, Point:U) { $a }
+multi infix:<+>(Point:D $a, Point:D $b) {
+    if ($a.x - $b.x) %% p {
+	return ($a.y + $b.y) %% p ?? Point !! 2 * $a;
+    }
+    else {
+	my $i = Modular::inverse($b.x - $a.x);
+	my $l = ($b.y - $a.y) * $i % p;
+	my $x = $l**2 - $a.x - $b.x;
+	my $y = $l*($a.x - $x) - $a.y;
+	return Point.bless: *, :x($x % p), :y($y % p);
+    }
 }
 
 package DSA {
-    class PublicKey {
-	has Point $.point;
+    class PublicKey is Point {
 	method verify(
 	    Buf $h,
-	    Int $r where { 0 < $_ < $p },
-	    Int $s where { 0 < $_ < $p }
+	    Int $r where { 0 < $_ < p },
+	    Int $s where { 0 < $_ < p }
 	) {
 	    my $c = Modular::inverse $s, my $order = G.order;
-	    !!! "unexpected product" unless $c * $s % $order == 1;
 	    my @u = map * *$c % $order, reduce(* *256 + *, $h.list), $r;
 	    $_ =
-		G.mult(reduce(* *256 + *, $h.list)*$c % $order).add:
-		$.point.clone.mult: $r*$c % $order;
+		(reduce(* *256 + *, $h.list)*$c % $order) * G +
+		($r*$c % $order) * self;
 	    !!! 'wrong signature' unless .x % $order == $r; 
 	}
     }
     class PrivateKey {
+	our $order = G.order;
 	has Int $.e;
+
 	method new(Int $e) { self.bless: *, :e($e) } 
 	method sign(Buf $h) {
 	    ENTER { $*ERR.print: 'ECDSA signature is going to take some time. Please be patient... ' }
 	    LEAVE { $*ERR.say:   'ok, done.' }
 
-	    # 0. Store the group order
-	    my $order = G.order;
-
-	    # 1. Chose a random modular number k
-	    my Int $k = reduce * *256+*, map { (^256).pick }, ^32;
+	    # 1. Chose a random number k
+	    my Int $k = reduce * *256+*, (^256).roll: ^32;
 
 	    # 2. Compute k * G
-	    my Point $point = G.mult: $k;
+	    my Point $point = $k * G;
 
 	    # 3. Compute r s
 	    my Int $r = $point.x % $order;
@@ -145,11 +138,6 @@ package DSA {
 	    # 4. Return r s
 	    return $r, $s;
 	}
-	method public_key { PublicKey.new: :point(G.mult: $.e) }
+	method public_key { PublicKey.bless: $.e * G }
     }
-
-}
-
-sub infix:<+>(PrivateKey $a, PrivateKey $b) {
-    PrivateKey.new: $a.e + $b.e;
 }
