@@ -1,8 +1,8 @@
 {
      "name" : "Bitcoin",
-     "version" : "0.1.9",
-     "description" : "Perl6 bitcoin library.",
+     "version" : "0.1.10",
+     "description" : "Raku bitcoin library.",
      "author" : "Lucien Grondin",
      "depends" : [ "Digest" ],
-     "source-url" : "git://github.com/grondilu/libbitcoin-perl6.git"
+     "source-url" : "git://github.com/grondilu/libbitcoin-raku.git"
  }
