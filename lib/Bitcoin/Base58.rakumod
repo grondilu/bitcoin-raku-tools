@@ -1,5 +1,4 @@
-module Bitcoin::Base58;
-use Bitcoin::Monkey;
+unit module Bitcoin::Base58;
 =begin pod
 =TITLE 
 Bitcoin::Base58,  Satoshi Nakamoto's base58 encoding
@@ -38,8 +37,19 @@ constant @B58 = <
 my %B58 = @B58 Z ^58;
 my $B58 = [~] '<[', @B58, ']>';
 
-our sub decode(Str $x) returns Int { $x ~~ /<$B58>$/ ?? %B58{$/} + 58*&?ROUTINE($/.prematch) !! 0 }
-our sub encode(Int $n) returns Str { $n < 58 ?? @B58[$n] !! &?ROUTINE($n div 58) ~ @B58[$n%58] }
+our proto decode(Str $x) returns Blob {*}
+
+multi decode($s where /^1+$/) { note "decoding"; Blob.new: 0 xx $/ }
+multi decode($s where /^1+/) { samewith(~$/) ~ samewith $/.postmatch }
+multi decode($s) { Blob.new: reduce * * 58 + *, %B58{$s.comb} }
+
+our proto encode($) returns Str {*}
+multi encode(Blob $b) {
+  if $b.elems > 1 and $b[0] == 0 { '1' ~ samewith $b.subbuf(1) }
+  else { samewith reduce * * 256 + *, $b.list }
+}
+multi encode(0) { '1' }
+multi encode(UInt $n) { @B58[$n.polymod(58 xx *).reverse].join }
 
 #| Base role for a versioned, checksumed, base58-encoded data structure.  aka CBase58Data
 role Data {  
