@@ -1,5 +1,5 @@
-#!/usr/local/bin/perl6
-module Bitcoin::EC;
+#!/usr/local/bin/raku
+unit module Bitcoin::EC;
 =begin DESCRIPTION
 
 In short, an elliptic curve is a set of integer coordinates of the plan,
@@ -44,57 +44,41 @@ class Point {
 	Int:D $x,
 	Int:D $y where ($y**2 - ($x**3 + a*$x + b)) %% p,
 	Int :$order?
-    ) { self.bless: *, :x($x % p), :y($y % p), :$order }
-    method gist { defined(self) ?? "EC Point at x=$.x, y=$.y" !! "point at horizon" }
+    ) { self.bless: :x($x % p), :y($y % p), :$order }
+    multi method gist(::?CLASS:D:) { "EC Point at x=$.x, y=$.y" }
+    multi method gist(::?CLASS:U:) { "point at horizon" }
 }
 
-constant G = Point.new:
+our constant G = Point.new:
 0x79BE667EF9DCBBAC55A06295CE870B07029BFCDB2DCE28D959F2815B16F81798,
 0x483ada7726a3c4655da4fbfc0e1108a8fd17b448a68554199c47d08ffb10d4b8,
 :order(0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEBAAEDCE6AF48A03BBFD25E8CD0364141);
 
+multi sub infix:<eqv>(Point $a, Point $b) returns Bool is export { $a.x == $b.x && $a.y == $b.y }
 multi sub prefix:<->(Point:U) { Point }
 multi sub prefix:<->(Point:D $point) {
-    Point.bless: *, :x($point.x), :y(-$point.y % p), :order($point.order);
+    Point.bless: :x($point.x), :y(-$point.y % p), :order($point.order);
 }
 multi infix:<->(Point $a, Point $b) { $a + -$b }
 
-multi infix:<*>(Point $u, Int $n) { $n * $u }
-multi infix:<*>(Int $n, Point:U) { Point }
-multi infix:<*>(0, Point:D) { Point }
-multi infix:<*>(1, Point:D $point) { $point }
-multi infix:<*>(2, Point:D $point) {
+multi infix:<*>(Point $u, Int $n) is export { $n * $u }
+multi infix:<*>(Int $n, Point:U) is export { Point }
+multi infix:<*>(0, Point)          is export { Point }
+multi infix:<*>(1, Point:D $point) is export { $point }
+multi infix:<*>(2, Point:D $point) is export {
     my Int $l = (3*$point.x**2 + a) * Modular::inverse(2 *$point.y) % p;
     my Int $x = ($l**2 - 2*$point.x) % p;
     my Int $y = ($l*($point.x - $x) - $point.y) % p;
     if defined $point.order {
-	Point.bless: *,
+	Point.bless:
 	:$x, :$y, :order($point.order %% 2 ?? $point.order div 2 !! $point.order);
     }
-    else { Point.bless: *, :$x, :$y }
+    else { Point.bless: :$x, :$y }
 }
 
-## Were Perl6 a bit faster, we'd do this:
-#multi infix:<*>(Int $n where $n > 2, Point:D $point) {
-#    2 * ($n div 2 * $point) + $n % 2 * $point;
-#}
-
-# But since it is still very slow, we need the following
-# trick to make it possible to use the unix basic calculator
-# for the elliptic curve exponentiation:
-my &mult:($n, $point) :=
-defined(%*ENV<PERL6_EC_METHOD>) && %*ENV<PERL6_EC_METHOD>.uc eq 'BC' ??
-sub ($n, $point) {
-    use Bitcoin::EC::BC;
-    return Point.new:
-    |Bitcoin::EC::BC::compute
-    "mult( $n, {$point.x} * p + {$point.y} )";
-} !!
-sub ($n, $point) {
-    $n == 0|1|2 ?? $n * $point !!
-    2 * &?ROUTINE($n div 2, $point) + $n % 2 * $point
-};
-multi infix:<*>(Int $n where $n > 2, Point:D $point) { mult($n, $point) }
+multi infix:<*>(Int $n where $n > 2, Point:D $point) is export {
+  2 * ($n div 2 * $point) + $n % 2 * $point;
+}
 
 multi infix:<+>(Point:U, Point $b) { $b }
 multi infix:<+>(Point:D $a, Point:U) { $a }
@@ -107,12 +91,12 @@ multi infix:<+>(Point:D $a, Point:D $b) {
 	my $l = ($b.y - $a.y) * $i % p;
 	my $x = $l**2 - $a.x - $b.x;
 	my $y = $l*($a.x - $x) - $a.y;
-	return Point.bless: *, :x($x % p), :y($y % p);
+	return Point.bless: :x($x % p), :y($y % p);
     }
 }
 
 package DSA {
-    class PublicKey is Point {
+    role PublicKey {
 	method verify(
 	    Buf $h,
 	    Int $r where { 0 < $_ < p },
@@ -130,10 +114,8 @@ package DSA {
 	our $order = G.order;
 	has Int $.e;
 
-	method new(Int $e) { self.bless: *, :e($e) } 
+	method new(Int $e) { self.bless: :e($e) } 
 	method sign(Buf $h) {
-	    ENTER { $*ERR.print: 'ECDSA signature is going to take some time. Please be patient... ' }
-	    LEAVE { $*ERR.say:   'ok, done.' }
 
 	    # 1. Chose a random number k
 	    my Int $k = reduce * *256+*, (^256).roll: ^32;
@@ -151,6 +133,8 @@ package DSA {
 	    # 4. Return r s
 	    return $r, $s;
 	}
-	method public_key { PublicKey.bless: $.e * G.clone }
+	method public_key { $.e * G.clone but PublicKey }
     }
 }
+
+# vi: ft=raku

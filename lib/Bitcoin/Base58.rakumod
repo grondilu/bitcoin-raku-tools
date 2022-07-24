@@ -38,12 +38,12 @@ my %B58 = @B58 Z ^58;
 my $B58 = [~] '<[', @B58, ']>';
 
 our proto decode(Str $x) returns Blob {*}
+our proto encode($)      returns Str  {*}
 
-multi decode($s where /^1+$/) { note "decoding"; Blob.new: 0 xx $/ }
-multi decode($s where /^1+/) { samewith(~$/) ~ samewith $/.postmatch }
+multi decode('') { Blob.new }
+multi decode($s where /^1/) { Blob.new(0) ~ samewith $/.postmatch }
 multi decode($s) { Blob.new: reduce * * 58 + *, %B58{$s.comb} }
 
-our proto encode($) returns Str {*}
 multi encode(Blob $b) {
   if $b.elems > 1 and $b[0] == 0 { '1' ~ samewith $b.subbuf(1) }
   else { samewith reduce * * 256 + *, $b.list }
