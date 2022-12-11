@@ -47,6 +47,8 @@ say entropy-to-mnemonics(@mnemo).join;  # (abaisser abaisser abaisser abaisser a
 say mnemonics-to-seed @mnemo;  
 ```
 
+## LICENSE
+
 This library is free software.  It is released on the same terms as Raku
 itself.  See the 'COPYRIGHT' and 'LICENSE' files for more information.
 
