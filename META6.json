@@ -1,8 +1,11 @@
 {
      "name" : "Bitcoin",
-     "version" : "0.1.13",
+     "version" : "0.2.1",
      "description" : "Raku bitcoin library.",
-     "author" : "Lucien Grondin",
-     "depends" : [ "Digest" ],
+     "author" : "grondilu",
+     "depends" : [
+       "Base58",
+       "Digest"
+     ],
      "source-url" : "git://github.com/grondilu/libbitcoin-raku.git"
  }
