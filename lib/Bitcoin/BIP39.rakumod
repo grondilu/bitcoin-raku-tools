@@ -1,6 +1,14 @@
 unit module Bitcoin::BIP39;
 
 proto entropy-to-mnemonics($) is export {*}
+sub create-mnemonics(UInt $number-of-words where (12, 15 ... 24).any = 12) is export {
+  # CS = ENT / 32
+  # MS = (ENT + CS) / 11
+  # (1 + 32)/32 ENT = 11 MS
+  # ENT = 32*11/33 MS (bits)
+  entropy-to-mnemonics blob8.new: ^256 .roll: 4*$number-of-words div 3;
+}
+  
 multi entropy-to-mnemonics(Str $s where /^[<xdigit>**2]+$/) {
   samewith blob8.new: $s.comb(2).map: {:16($_)}
 }

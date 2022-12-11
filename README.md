@@ -30,6 +30,11 @@ print $m/0/0h;
 
 use Bitcoin::BIP39;
 
+# create random mnemonics
+say create-mnemonics 24;     # twenty four words
+say create-mnemonics;        # default is twelve
+
+# create mnemonics from entropy
 say my @mnemo = entropy-to-mnemonics
     blob8.new: 0 xx 16;                 # (abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about)
 
