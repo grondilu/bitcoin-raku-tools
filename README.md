@@ -30,7 +30,8 @@ print $m/0/0h;
 
 use Bitcoin::BIP39;
 
-say my @mnemo = entropy-to-mnemonics blob8.new: 0 xx 16;        # (abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about)
+say my @mnemo = entropy-to-mnemonics
+    blob8.new: 0 xx 16;                 # (abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about)
 
 %*ENV<LANG>='zh_CN';
 say entropy-to-mnemonics(@mnemo).join;  # 的的的的的的的的的的的在
