@@ -7,7 +7,7 @@ use Bitcoin::EC;
 constant key-range is export = 1..^Bitcoin::EC::G.order;
 subset privateKey of UInt is export where key-range;
 
-sub checksum(Blob $b --> Blob) { (&sha256 ∘ &sha256)($b).subbuf(0, 4) }
+sub checksum(Blob $b --> Blob) { sha256(sha256 $b).subbuf(0, 4) }
 sub append-checksum(Blob $b --> Blob) { $b ~ checksum $b }
 
 subset checkedB58Str of Str is export where /
