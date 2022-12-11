@@ -1,6 +1,6 @@
 {
      "name" : "Bitcoin",
-     "version" : "0.1.12",
+     "version" : "0.1.13",
      "description" : "Raku bitcoin library.",
      "author" : "Lucien Grondin",
      "depends" : [ "Digest" ],
