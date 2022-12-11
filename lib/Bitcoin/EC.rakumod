@@ -25,19 +25,24 @@ constant p = 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEFFFFFC2F;
 constant b = 7;
 constant a = 0;
 
+CHECK die "p needs to be prime" unless p.is-prime;
+
 package Modular {
-    our sub inverse(Int $n, Int $m = p) returns Int {
-	my Int ($c, $d, $uc, $vc, $ud, $vd) = ($n % $m, $m, 1, 0, 0, 1);
-	my Int $q;
-	while $c != 0 {
-	    ($q, $c, $d) = ($d div $c, $d % $c, $c);
-	    ($uc, $vc, $ud, $vd) = ($ud - $q*$uc, $vd - $q*$vc, $uc, $vc);
-	}
-	return $ud < 0 ?? $ud + $m !! $ud;
+  our sub inverse(Int $n, Int $m = p) returns Int {
+    if $m.is-prime { expmod $n, $m - 2, $m }
+    else {
+      my Int ($c, $d, $uc, $vc, $ud, $vd) = ($n % $m, $m, 1, 0, 0, 1);
+      my Int $q;
+      while $c != 0 {
+	($q, $c, $d) = ($d div $c, $d % $c, $c);
+	($uc, $vc, $ud, $vd) = ($ud - $q*$uc, $vd - $q*$vc, $uc, $vc);
+      }
+      return $ud < 0 ?? $ud + $m !! $ud;
     }
+  }
 }
 
-class Point {
+our class Point {
     has Int ($.x, $.y, $.order);
     multi method new
     (
@@ -47,6 +52,10 @@ class Point {
     ) { self.bless: :x($x % p), :y($y % p), :$order }
     multi method gist(::?CLASS:D:) { "EC Point at x=$.x, y=$.y" }
     multi method gist(::?CLASS:U:) { "point at horizon" }
+    multi method Blob { blob8.new: ($!y %% 2 ?? 2 !! 3), $!x.polymod(256 xx 31).reverse }
+    multi method Blob(:$uncompressed where ?*) {
+      blob8.new: 0x04, ($!x, $!y).map: *.polymod(256 xx 31).reverse
+    }
 }
 
 our constant G = Point.new:
@@ -99,8 +108,8 @@ package DSA {
     role PublicKey {
 	method verify(
 	    Buf $h,
-	    Int $r where { 0 < $_ < p },
-	    Int $s where { 0 < $_ < p }
+	    Int $r where 1..^p,
+	    Int $s where 1..^p,
 	) {
 	    my $c = Modular::inverse $s, my $order = G.order;
 	    my @u = map * *$c % $order, reduce(* *256 + *, $h.list), $r;
