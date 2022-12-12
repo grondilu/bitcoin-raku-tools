@@ -1,6 +1,7 @@
 unit module Bitcoin::BIP32;
 use Digest::HMAC:auth("Lucien Grondin");
 use Digest::SHA2;
+use Digest::RIPEMD;
 
 our constant %version-prefixes =
   mainnet => %(public => 0x0488B21E, private => 0x0488ADE4),
@@ -11,6 +12,8 @@ sub postfix:<h>(UInt $i) is export { $i + 2**31 }
 
 sub ser32(uint32 $i --> blob8) { blob8.new: $i.polymod(256 xx 3).reverse; }
 sub ser256(UInt  $p --> blob8) { blob8.new: $p.polymod(256 xx 31).reverse; }
+
+sub parse256(blob8 $b --> UInt) { $b.list.reduce: 256 * * + * }
 
 role ExtendedKey {
   method version returns uint32 {...}
@@ -55,6 +58,7 @@ class PrivateExtendedKey does ExtendedKey {
       chain-code => self.chain-code,
       key => blob8.new: self.Point.Blob.list
   }
+  method Int { parse256 self.key }
 }
 
 sub N(PrivateExtendedKey $key --> PublicExtendedKey) is export { $key.publicKey }
@@ -67,7 +71,7 @@ class MasterKey is PrivateExtendedKey is export {
       hash => &sha512, block-size => 128;
     my ($Il, $Ir) = map { $sha512.subbuf($_, 32) }, 0, 32;
 
-    PrivateExtendedKey.new:
+    samewith
       depth        => 0,
       fingerprint  => 0,
       child-number => 0,
@@ -77,10 +81,18 @@ class MasterKey is PrivateExtendedKey is export {
   }
 }
 
-multi infix:</>(PrivateExtendedKey $ek, UInt $i) is export {
-  my $key = $ek.chain-code;
-  my $msg = $i ≥ 2**31 ?? blob8.new(0) ~ $ek.key !! $ek.key;
-  $msg ~= ser32($i);
-  my $I = hmac(:$key, :$msg, hash => &sha512, block-size => 128);
-  return $I;
+multi infix:</>(PrivateExtendedKey $k, UInt $i) is export {
+  my $msg = ($i ≥ 2**31 ?? $k.key !! $k.publicKey.key) ~ ser32($i);
+  my ($left, $right) = .subbuf(0, 32), .subbuf(32) given 
+    hmac(key => $k.chain-code, :$msg, hash => &sha512, block-size => 128);
+  $k.new:
+    depth          => $k.depth + 1,
+    fingerprint    => (rmd160 sha256 $k.publicKey.key)
+			.subbuf(0, 4)
+			.list.reduce(256 * * + *),
+    child-number   => $i,
+    chain-code     => $right,
+    key            => blob8.new(0) ~
+                      ser256((parse256($left) + $k.Int) mod Bitcoin::EC::G.order)
+  ;
 }
