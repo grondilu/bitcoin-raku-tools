@@ -19,7 +19,7 @@ say WIF $key, :uncompressed # 5K6WMB7MGenK2TdScgSp2B5REDACTEDyxbeamdaREDACTEDPvb
 say P2PKH::address $key;                 # 1JGoEGREDACTEDzGTBQhDu15pWa5WgDjLa
 say P2PKH::address $key, :uncompressed;  # 13UpWYvdnJZuMREDACTEDDTNQEsrLpyGWd
 
-use Bitcoin::BIP32;
+use BIP32;
 
 # master key generation from a seed
 my MasterKey $m .= new: my $seed = blob8.new: ^256 .roll: 32;
@@ -28,7 +28,7 @@ my MasterKey $m .= new: my $seed = blob8.new: ^256 .roll: 32;
 print $m/0;
 print $m/0/0h;
 
-use Bitcoin::BIP39;
+use BIP39;
 
 # create random mnemonics
 say create-mnemonics 24;     # twenty four words
