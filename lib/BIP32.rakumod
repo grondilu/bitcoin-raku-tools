@@ -15,6 +15,7 @@ sub parse256(blob8 $b --> UInt) { $b.list.reduce: 256 * * + * }
 need Bitcoin::BIP32::ExtendedKey::Private;
 need Bitcoin::BIP32::ExtendedKey::Public;
 class MasterKey is Bitcoin::BIP32::ExtendedKey::Private is export {
+  multi method new { samewith blob8.new: ^258 .roll: 16 }
   multi method new(Blob $seed) {
     my $sha512 = hmac
       key => "Bitcoin seed",
@@ -22,7 +23,7 @@ class MasterKey is Bitcoin::BIP32::ExtendedKey::Private is export {
       hash => &sha512, block-size => 128;
     my ($Il, $Ir) = map { $sha512.subbuf($_, 32) }, 0, 32;
 
-    samewith
+    self.bless:
       depth        => 0,
       fingerprint  => 0,
       child-number => 0,

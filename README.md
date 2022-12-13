@@ -21,7 +21,10 @@ say P2PKH::address $key, :uncompressed;  # 13UpWYvdnJZuMREDACTEDDTNQEsrLpyGWd
 
 use BIP32;
 
-# master key generation from a seed
+# master key generation
+#   - random, defaut entropy is 16 bytes
+my MasterKey $m .= new;
+#   - from a seed
 my MasterKey $m .= new: my $seed = blob8.new: ^256 .roll: 32;
 
 # key derivation
