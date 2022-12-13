@@ -14,7 +14,7 @@ multi entropy-to-mnemonics(Str $s where /^[<xdigit>**2]+$/) {
 }
 multi entropy-to-mnemonics(blob8 $b where $b.elems ~~ 16..32 && $b.elems %% 4) {
 
-  use Digest::SHA2;
+  use Digest::OpenSSL;
 
   my $ENT = $b.elems*8;
   my @bits = flat $b.map(*.polymod(2 xx 7).reverse);
@@ -39,7 +39,7 @@ multi entropy-to-mnemonics(blob8 $b where $b.elems ~~ 16..32 && $b.elems %% 4) {
 sub mnemonics-to-seed(@mnemo, Str :$passphrase = '') is export {
   use PBKDF2;
   use Digest::HMAC:auth<grondilu>;
-  use Digest::SHA2;
+  use Digest::OpenSSL;
   
   pbkdf2 @mnemo.join(' '),
     salt => "mnemonic$passphrase",

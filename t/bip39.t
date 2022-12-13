@@ -44,4 +44,6 @@ EOF
   }
 }
 
+done-testing;
+
 #vi: ft=raku

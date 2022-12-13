@@ -1,9 +1,9 @@
 unit module Bitcoin::BIP32;
 use Digest::HMAC:auth<grondilu>;
-use Digest::SHA2;
+use Digest::OpenSSL;
 use Digest::RIPEMD;
 
-use Bitcoin::EC;
+use secp256k1;
 
 sub postfix:<h>(UInt $i) is export { $i + 2**31 }
 
@@ -70,5 +70,5 @@ multi infix:</>(Bitcoin::BIP32::ExtendedKey::Public $K, UInt $i where * < 2**31)
     fingerprint    => $K.identifier.subbuf(0, 4).list.reduce(256 * * + *),
     child-number   => $i,
     chain-code     => $right,
-    point => $left.list.reduce(256 * * + *)*Bitcoin::EC::G + $K.Point;
+    point => $left.list.reduce(256 * * + *)*G + $K.Point;
 }

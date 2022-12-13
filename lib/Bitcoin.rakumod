@@ -1,11 +1,10 @@
 unit module Bitcoin;
-use Digest::SHA2;
+use Digest::OpenSSL;
 use Digest::RIPEMD;
 use Base58;
-use Bitcoin::EC;
+use secp256k1;
 
-constant key-range is export = 1..^Bitcoin::EC::G.order;
-subset privateKey of UInt is export where key-range;
+constant key-range is export = 1..^secp256k1::G.order;
 
 sub checksum(Blob $b --> Blob) { sha256(sha256 $b).subbuf(0, 4) }
 sub append-checksum(Blob $b --> Blob) { $b ~ checksum $b }
@@ -18,7 +17,7 @@ subset checkedB58Str of Str is export where /
   }>
 /;
 
-sub WIF(privateKey $key, Bool :$uncompressed = False --> checkedB58Str) is export {
+sub WIF(UInt $key where key-range, Bool :$uncompressed = False --> checkedB58Str) is export {
   Base58::encode append-checksum blob8.new:
     %*ENV<BITCOIN_TEST> ?? 0xef !! 0x80,
     $key.polymod(256 xx 31).reverse,
@@ -27,9 +26,13 @@ sub WIF(privateKey $key, Bool :$uncompressed = False --> checkedB58Str) is expor
 }
 
 package P2PKH is export {
-  our sub address(privateKey $key, Bool :$uncompressed = False --> checkedB58Str) {
+  our proto address(|) returns checkedB58Str is export {*}
+  multi address(UInt $key where key-range, Bool :$uncompressed = False --> checkedB58Str) {
+    samewith $key*secp256k1::G, :$uncompressed;
+  }
+  multi address(Point $point, Bool :$uncompressed = False) {
      Base58::encode append-checksum
-     blob8.new(0) ~ (&rmd160 ∘ &sha256)((Bitcoin::EC::G*$key).Blob(:$uncompressed))
+     blob8.new(0) ~ rmd160 sha256($point.Blob(:$uncompressed))
   }
 }
 

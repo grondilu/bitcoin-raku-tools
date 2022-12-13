@@ -1,11 +1,17 @@
 {
      "name" : "Bitcoin",
-     "version" : "0.2.4",
+     "version" : "0.3.1",
      "description" : "Raku bitcoin library.",
      "author" : "grondilu",
+     "provides": {
+       "Bitcoin"  :      "lib/Bitcoin.rakumod",
+       "Bitcoin::BIP32": "lib/Bitcoin/BIP32.rakumod",
+       "Bitcoin::BIP39": "lib/Bitcoin/BIP39.rakumod"
+     },
      "depends" : [
        "Base58",
-       "Digest"
+       "Digest",
+       "EC"
      ],
      "source-url" : "git://github.com/grondilu/libbitcoin-raku.git"
  }
