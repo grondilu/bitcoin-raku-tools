@@ -1,5 +1,5 @@
-use Bitcoin::BIP39;
-use Bitcoin::BIP32;
+use BIP39;
+use BIP32;
 
 %*ENV<LANG> = 'C';
 

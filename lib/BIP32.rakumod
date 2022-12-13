@@ -1,4 +1,4 @@
-unit module Bitcoin::BIP32;
+unit module BIP32;
 use Digest::HMAC:auth<grondilu>;
 use Digest::OpenSSL;
 use Digest::RIPEMD;

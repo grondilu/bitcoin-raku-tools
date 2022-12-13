@@ -1,4 +1,4 @@
-use Bitcoin::BIP32;
+use BIP32;
 use Base58;
 
 use Test;
