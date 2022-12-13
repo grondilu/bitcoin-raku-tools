@@ -1,7 +1,6 @@
 unit module BIP32;
 use Digest::HMAC:auth<grondilu>;
 use Digest::OpenSSL;
-use Digest::RIPEMD;
 
 use secp256k1;
 
@@ -52,7 +51,7 @@ multi infix:</>(Bitcoin::BIP32::ExtendedKey::Private $k, UInt $i) is export {
       msg => ($i ≥ 2**31 ?? $k.key !! $k.Point.Blob) ~ ser32($i),
       hash => &sha512, block-size => 128
   ;
-  $k.new:
+  Bitcoin::BIP32::ExtendedKey::Private.new:
     depth          => $k.depth + 1,
     fingerprint    => $k.identifier.subbuf(0, 4).list.reduce(256 * * + *),
     child-number   => $i,
