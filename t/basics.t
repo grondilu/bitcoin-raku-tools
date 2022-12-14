@@ -17,4 +17,4 @@ is WIF($key),                'KyBsPXxTuVD82av65KZkrGrWi5qLMah5SdNq6uftawDbgKa2wv
 
 done-testing;
 
-#vi: ft=raku
+# vi: ft=raku
