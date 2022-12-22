@@ -1,16 +1,9 @@
-unit role Bitcoin::BIP32::ExtendedKey;
+unit role BIP32::xkey;
 use secp256k1;
 
 method version returns uint32 {...}
 method key returns Blob {...}
 method Point returns Point {...}
-
-method identifier returns Blob {
-  #use Digest::SHA2;
-  use Digest::OpenSSL;
-  use Digest::RIPEMD;
-  rmd160 sha256 self.Point.Blob;
-}
 
 has uint8 $.depth;
 has uint32 ($.fingerprint, $.child-number);
@@ -27,11 +20,13 @@ method Blob {
     self.child-number.polymod(256 xx 3).reverse
   ) ~ self.chain-code ~ self.key
 }
-method Str {
-  use Base58;
-  #use Digest::SHA2;
-  use Digest::OpenSSL;
-  given self.Blob {
-    return Base58::encode $_ ~ (sha256 sha256 $_).subbuf(0, 4);
+
+{
+  use Digest::SHA2;
+  use Digest::RIPEMD;
+  method Str {
+    use Base58;
+    Base58::encode self.Blob ~ (sha256 sha256 self.Blob).subbuf(0, 4);
   }
+  method identifier returns Blob { rmd160 sha256 self.Point.Blob; }
 }

@@ -1,4 +1,5 @@
 unit module BIP39;
+#BEGIN %*ENV<DIGEST_METHOD> = 'openssl';
 
 proto entropy-to-mnemonics($) is export {*}
 sub create-mnemonics(UInt $number-of-words where (12, 15 ... 24).any = 12) is export {
@@ -14,7 +15,7 @@ multi entropy-to-mnemonics(Str $s where /^[<xdigit>**2]+$/) {
 }
 multi entropy-to-mnemonics(blob8 $b where $b.elems ~~ 16..32 && $b.elems %% 4) {
 
-  use Digest::OpenSSL;
+  use Digest::SHA2;
 
   my $ENT = $b.elems*8;
   my @bits = flat $b.map(*.polymod(2 xx 7).reverse);
@@ -39,13 +40,21 @@ multi entropy-to-mnemonics(blob8 $b where $b.elems ~~ 16..32 && $b.elems %% 4) {
 sub mnemonics-to-seed(@mnemo, Str :$passphrase = '') is export {
   use PBKDF2;
   use Digest::HMAC:auth<grondilu>;
-  use Digest::OpenSSL;
+  use Digest::SHA2;
   
+  constant $c = 2048;
+  constant $dkLen = 64;
+
+  my $salt = "mnemonic$passphrase";
+
+  #LEAVE $*ERR.printf: "\n";
   pbkdf2 @mnemo.join(' '),
-    salt => "mnemonic$passphrase",
-    prf => sub ($msg, $key) { hmac(:$key, :$msg, hash => &sha512, block-size => 128) },
-    c => 2048,
-    dkLen => 64
+    :$salt,
+    prf => sub ($msg, $key) {
+      #$*ERR.printf: "\rPBKDF2 %{$c.chars}i/%i", $++, $c;
+      hmac(:$key, :$msg, hash => &sha512, block-size => 128)
+    },
+    :$c, :$dkLen
   ;
 
 }

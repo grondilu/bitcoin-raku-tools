@@ -1,8 +1,9 @@
 {
      "name" : "Bitcoin",
-     "version" : "0.4.2",
+     "version" : "0.5.0",
      "description" : "Raku bitcoin library.",
-     "author" : "grondilu",
+     "author" : "Lucien Grondin",
+     "auth" : "zef:grondilu",
      "provides": {
        "Bitcoin":   "lib/Bitcoin.rakumod",
        "BIP32":     "lib/BIP32.rakumod",

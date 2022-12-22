@@ -1,5 +1,5 @@
 unit module Bitcoin;
-use Digest::OpenSSL;
+use Digest::SHA2;
 use Digest::RIPEMD;
 use Base58;
 use secp256k1;
