@@ -11,8 +11,8 @@ is (G*$key).Blob,
 is P2PKH::address($key, :uncompressed), '1thMirt546nngXqyPEz532S8fLwbozud8';
 is P2PKH::address($key),                '14cxpo3MBCYYWCgF74SWTdcmxipnGUsPw3';
 
-is WIF($key, :uncompressed), '5JG9hT3beGTJuUAmCQEmNaxAuMacCTfXuw1R3FCXig23RQHMr4K';
-is WIF($key),                'KyBsPXxTuVD82av65KZkrGrWi5qLMah5SdNq6uftawDbgKa2wv6S';
+is ($key but WIF[:uncompressed]).gist, '5JG9hT3beGTJuUAmCQEmNaxAuMacCTfXuw1R3FCXig23RQHMr4K';
+is ($key but WIF).gist,                'KyBsPXxTuVD82av65KZkrGrWi5qLMah5SdNq6uftawDbgKa2wv6S';
 
 
 done-testing;

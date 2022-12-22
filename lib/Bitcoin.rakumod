@@ -17,12 +17,14 @@ subset checkedB58Str of Str is export where /
   }>
 /;
 
-sub WIF(UInt $key where key-range, Bool :$uncompressed = False --> checkedB58Str) is export {
-  Base58::encode append-checksum blob8.new:
-    %*ENV<BITCOIN_TEST> ?? 0xef !! 0x80,
-    $key.polymod(256 xx 31).reverse,
-    $uncompressed ?? Empty !! 0x01
-  ;
+role WIF[Bool :$uncompressed = False] is export {
+  method gist {
+    Base58::encode append-checksum blob8.new:
+      %*ENV<BITCOIN_TEST> ?? 0xef !! 0x80,
+      self.polymod(256 xx 31).reverse,
+      $uncompressed ?? Empty !! 0x01
+	;
+  }
 }
 
 package P2PKH is export {
