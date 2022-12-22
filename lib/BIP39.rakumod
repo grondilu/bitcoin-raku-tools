@@ -38,23 +38,15 @@ multi entropy-to-mnemonics(blob8 $b where $b.elems ~~ 16..32 && $b.elems %% 4) {
 }
 
 sub mnemonics-to-seed(@mnemo, Str :$passphrase = '') is export {
-  use PBKDF2;
-  use Digest::HMAC:auth<grondilu>;
-  use Digest::SHA2;
-  
-  constant $c = 2048;
+  constant $c     = 2048;
   constant $dkLen = 64;
 
-  my $salt = "mnemonic$passphrase";
-
-  #LEAVE $*ERR.printf: "\n";
-  pbkdf2 @mnemo.join(' '),
-    :$salt,
-    prf => sub ($msg, $key) {
-      #$*ERR.printf: "\rPBKDF2 %{$c.chars}i/%i", $++, $c;
-      hmac(:$key, :$msg, hash => &sha512, block-size => 128)
-    },
-    :$c, :$dkLen
-  ;
+  .out.slurp(:close) given run
+    qqww{openssl kdf -keylen $dkLen -kdfopt "digest:SHA512"
+	-kdfopt "pass:{@mnemo.join: ' '}"
+	-kdfopt "salt:mnemonic$passphrase" 
+	-kdfopt "iter:$c" -binary 
+	PBKDF2
+      }, :bin, :out;
 
 }
