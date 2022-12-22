@@ -11,9 +11,9 @@ say key-range;  # 1..^115792[many more digits...]
 # creating a private key is just picking an integer in that range
 say my UInt $key = key-range.pick; # just a big integer
 
-# Wallet Import Format
-say WIF $key;               # L2sJY3d2U5kzZSXrREDACTEDW3TbBidYQPvt3REDACTED84e55wr
-say WIF $key, :uncompressed # 5K6WMB7MGenK2TdScgSp2B5REDACTEDyxbeamdaREDACTEDPvbt
+# To get the Wallet Import Format, use the exported WIF role
+say $key but WIF;               # L2sJY3d2U5kzZSXrREDACTEDW3TbBidYQPvt3REDACTED84e55wr
+say $key but WIF[:uncompressed] # 5K6WMB7MGenK2TdScgSp2B5REDACTEDyxbeamdaREDACTEDPvbt
 
 # P2PKH addresses
 say P2PKH::address $key;                 # 1JGoEGREDACTEDzGTBQhDu15pWa5WgDjLa
