@@ -12,6 +12,7 @@
      "depends" : [
        "Base58",
        "Digest",
+       "PBKDF2",
        "EC"
      ],
      "source-url" : "git://github.com/grondilu/libbitcoin-raku.git"
