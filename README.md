@@ -1,3 +1,5 @@
+[![SparrowCI](https://ci.sparrowhub.io/project/gh-grondilu-bitcoin-raku-tools/badge)](https://ci.sparrowhub.io)
+
 # Bitcoin raku tools
 
 ## Synopses
