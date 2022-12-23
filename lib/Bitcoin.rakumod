@@ -17,17 +17,7 @@ subset checkedB58Str of Str is export where /
   }>
 /;
 
-role WIF[Bool :$uncompressed = False] is export {
-  method gist {
-    Base58::encode append-checksum blob8.new:
-      %*ENV<BITCOIN_TEST> ?? 0xef !! 0x80,
-      self.polymod(256 xx 31).reverse,
-      $uncompressed ?? Empty !! 0x01
-	;
-  }
-}
-
-package P2PKH is export {
+our package P2PKH {
   our proto address(|) returns checkedB58Str is export {*}
   multi address(UInt $key where key-range, Bool :$uncompressed = False --> checkedB58Str) {
     samewith $key*secp256k1::G, :$uncompressed;
@@ -35,6 +25,20 @@ package P2PKH is export {
   multi address(Point $point, Bool :$uncompressed = False) {
      Base58::encode append-checksum
      blob8.new(0) ~ rmd160 sha256($point.Blob(:$uncompressed))
+  }
+}
+
+our role PrivateKey {
+  submethod TWEAK { die "integer out of range" unless self ~~ 1..secp256k1::G.order }
+  method wif(Bool :$uncompressed = False) returns checkedB58Str {
+    Base58::encode append-checksum blob8.new:
+      %*ENV<BITCOIN_TEST> ?? 0xef !! 0x80,
+      self.polymod(256 xx 31).reverse,
+      $uncompressed ?? Empty !! 0x01
+      ;
+  }
+  multi method address(:$uncompressed = False) {
+    P2PKH::address self, :$uncompressed;
   }
 }
 

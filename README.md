@@ -1,24 +1,32 @@
 # Bitcoin raku tools
 
-## Synopsis
+## Synopses
 
+### Bitcoin
 ```raku
 use Bitcoin;
 
-# A private key is just an integer in a particular range.
-say key-range;  # 1..^115792[many more digits...]
+# A private key is just a 256-bits integer
+say ^2**256 .pick;
 
-# creating a private key is just picking an integer in that range
-say my UInt $key = key-range.pick; # just a big integer
+# mix it with the Bitcoin::PrivateKey role to add bitcoin-related methods
+say my $key = key-range.pick but Bitcoin::PrivateKey;
 
-# To get the Wallet Import Format, use the exported WIF role
-say $key but WIF;               # L2sJY3d2U5kzZSXrREDACTEDW3TbBidYQPvt3REDACTED84e55wr
-say $key but WIF[:uncompressed] # 5K6WMB7MGenK2TdScgSp2B5REDACTEDyxbeamdaREDACTEDPvbt
+# There is a very small chance that mixing will fail as the key range does not
+# quite go up to 2**256.  See documentation about secp256k1 for details.
+my $key = 2**256 - 123 but Bitcoin::PrivateKey;  # dies with 'index out of range' message
 
-# P2PKH addresses
-say P2PKH::address $key;                 # 1JGoEGREDACTEDzGTBQhDu15pWa5WgDjLa
-say P2PKH::address $key, :uncompressed;  # 13UpWYvdnJZuMREDACTEDDTNQEsrLpyGWd
+# Otherwise, the Bitcoin::PrivateKey role mainly defines a wif and address method.
+# So far, the generated address is always the P2PKH one.
+say $key.wif;                     # L2sJY3d2U5kzZSXrREDACTEDW3TbBidYQPvt3REDACTED84e55wr
+say $key.wif: :uncompressed;      # 5K6WMB7MGenK2TdScgSp2B5REDACTEDyxbeamdaREDACTEDPvbt
+say $key.address;                 # 1JGoEGREDACTEDzGTBQhDu15pWa5WgDjLa
+say $key.address: :uncompressed;  # 13UpWYvdnJZuMREDACTEDDTNQEsrLpyGWd
+```
 
+### BIP32
+
+```raku
 use BIP32;
 
 # master key generation
@@ -30,24 +38,32 @@ my MasterKey $m .= new: my $seed = blob8.new: ^256 .roll: 32;
 # key derivation
 print $m/0;
 print $m/0/0h;
+```
 
+### BIP39
+
+```raku
 use BIP39;
 
 # create random mnemonics
-say create-mnemonics 24;     # twenty four words
-say create-mnemonics;        # default is twelve
+say Mnemonic.new: 24;     # twenty four words
+say Mnemonic.new;         # default is twelve
 
 # create mnemonics from entropy
-say my @mnemo = entropy-to-mnemonics
-    blob8.new: 0 xx 16;                 # (abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about)
+my blob8 $entropy .= new: 0 xx 16;
+
+say Mnemonic.new: $entropy;    # (abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about)
 
 %*ENV<LANG>='zh_CN';
-say entropy-to-mnemonics(@mnemo).join;  # 的的的的的的的的的的的在
+say Mnemonic.new: $entropy;    # 的的的的的的的的的的的在
 
 %*ENV<LANG>='fr_FR';                               
-say entropy-to-mnemonics(@mnemo).join;  # (abaisser abaisser abaisser abaisser abaisser abaisser abaisser abaisser abaisser abaisser abaisser abeille) 
+say Mnemonic.new: $entropy;    # (abaisser abaisser abaisser abaisser abaisser abaisser abaisser abaisser abaisser abaisser abaisser abeille) 
 
-say mnemonics-to-seed @mnemo;  
+# extract a BIP32-compatible seed
+say Mnemonic.new.Blob;
+# same, but with a passphrase
+say Mnemonic.new.Blob('sezame');
 ```
 
 ## LICENSE

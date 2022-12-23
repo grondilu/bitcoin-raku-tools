@@ -9,6 +9,8 @@ sub hex-to-blob(Str $str where /^[<xdigit>**2]+$/ --> blob8) {
   blob8.new: $str.comb(/../).map({:16($_)})
 }
 
+my $openssl-version = qx{openssl version};
+
 for q:to{EOF}.lines {
 00000000000000000000000000000000:abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about:c55257c360c07c72029aebc1b53c05ed0362ada38ead3e3e9efa3708e53495531f09a6987599d18264c1e1c92f2cf141630c7a3c4ab7c81b2f001698e7463b04:xprv9s21ZrQH143K3h3fDYiay8mocZ3afhfULfb5GX8kCBdno77K4HiA15Tg23wpbeF1pLfs1c5SPmYHrEpTuuRhxMwvKDwqdKiGJS9XFKzUsAF
 7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f:legal winner thank year wave sausage worth useful legal winner thank yellow:2e8905819b8723fe2c1d161860e5ee1830318dbf49a83bd451cfb8440c28bd6fa457fe1296106559a3c80937a1c1069be3a3a5bd381ee6260e8d9739fce1f607:xprv9s21ZrQH143K2gA81bYFHqU68xz1cX2APaSq5tt6MFSLeXnCKV1RVUJt9FWNTbrrryem4ZckN8k4Ls1H6nwdvDTvnV7zEXs2HgPezuVccsq
@@ -35,12 +37,19 @@ f30f8c1da665478f49b001d94c5fc452:vessel ladder alter error federal sibling chat 
 c10ec20dc3cd9f652c7fac2f1230f7a3c828389a14392f05:scissors invite lock maple supreme raw rapid void congress muscle digital elegant little brisk hair mango congress clump:7b4a10be9d98e6cba265566db7f136718e1398c71cb581e1b2f464cac1ceedf4f3e274dc270003c670ad8d02c4558b2f8e39edea2775c9e232c7cb798b069e88:xprv9s21ZrQH143K4aERa2bq7559eMCCEs2QmmqVjUuzfy5eAeDX4mqZffkYwpzGQRE2YEEeLVRoH4CSHxianrFaVnMN2RYaPUZJhJx8S5j6puX
 f585c11aec520db57dd353c69554b21a89b20fb0650966fa0a9d6f74fd989d8f:void come effort suffer camp survey warrior heavy shoot primary clutch crush open amazing screen patrol group space point ten exist slush involve unfold:01f5bced59dec48e362f2c45b5de68b9fd6c92c6634f44d6d40aab69056506f0e35524a518034ddc1192e1dacd32c1ed3eaa3c3b131c88ed8e7e54c49a5d0998:xprv9s21ZrQH143K39rnQJknpH1WEPFJrzmAqqasiDcVrNuk926oizzJDDQkdiTvNPr2FYDYzWgiMiC63YmfPAa2oPyNB23r2g7d1yiK6WpqaQS
 EOF
-  my ($entropy, $mnemo, $seed, $xprv) = .split(/\:/);
-  $seed.=&hex-to-blob;
-  subtest "entropy ← $entropy", {
-    is entropy-to-mnemonics($entropy), $mnemo, 'entropy → mnemo';
-    is mnemonics-to-seed($mnemo.words, passphrase => 'TREZOR'), $seed, 'mnemo → seed';
-    is MasterKey.new($seed), $xprv, 'seed → master key';
+  my ($hex-entropy, $joined-words, $hex-seed, $xprv) = .split(/\:/);
+  my ($entropy, $seed) = map &hex-to-blob, $hex-entropy, $hex-seed;
+  my $words = $joined-words.words;
+  subtest "entropy ← $hex-entropy", {
+    given Mnemonic.new: $entropy {
+      is .words, $words, 'entropy → mnemo';
+      if $openssl-version ~~ /^'OpenSSL 3'/ {
+	is MasterKey.new($seed), $xprv, 'seed → master key';
+      } else {
+        skip 'master key generation from seed would be too slow without OpenSSL v3+';
+      }
+      is .Blob('TREZOR'), $seed, 'mnemo → seed';
+    }
   }
 }
 

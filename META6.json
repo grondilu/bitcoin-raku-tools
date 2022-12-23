@@ -1,7 +1,7 @@
 {
      "name" : "Bitcoin",
-     "version" : "0.6.0",
-     "description" : "Raku bitcoin library.",
+     "version" : "0.7.0",
+     "description" : "Bitcoin raku tools.",
      "author" : "Lucien Grondin",
      "auth" : "zef:grondilu",
      "provides": {
