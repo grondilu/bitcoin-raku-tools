@@ -4,8 +4,6 @@ use Digest::RIPEMD;
 use Base58;
 use secp256k1;
 
-constant key-range is export = 1..^secp256k1::G.order;
-
 sub checksum(Blob $b --> Blob) { sha256(sha256 $b).subbuf(0, 4) }
 sub append-checksum(Blob $b --> Blob) { $b ~ checksum $b }
 
@@ -19,7 +17,7 @@ subset checkedB58Str of Str is export where /
 
 our package P2PKH {
   our proto address(|) returns checkedB58Str is export {*}
-  multi address(UInt $key where key-range, Bool :$uncompressed = False --> checkedB58Str) {
+  multi address(UInt $key where 1..^secp256k1::G.order, Bool :$uncompressed = False --> checkedB58Str) {
     samewith $key*secp256k1::G, :$uncompressed;
   }
   multi address(Point $point, Bool :$uncompressed = False) {

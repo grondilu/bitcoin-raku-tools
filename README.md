@@ -10,7 +10,7 @@ use Bitcoin;
 say ^2**256 .pick;
 
 # mix it with the Bitcoin::PrivateKey role to add bitcoin-related methods
-say my $key = key-range.pick but Bitcoin::PrivateKey;
+say my $key = ^2**256 .pick but Bitcoin::PrivateKey;
 
 # There is a very small chance that mixing will fail as the key range does not
 # quite go up to 2**256.  See documentation about secp256k1 for details.
