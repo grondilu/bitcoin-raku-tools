@@ -43,12 +43,12 @@ EOF
   subtest "entropy ← $hex-entropy", {
     given Mnemonic.new: $entropy {
       is .words, $words, 'entropy → mnemo';
+      is MasterKey.new($seed), $xprv, 'seed → master key';
       if $openssl-version ~~ /^'OpenSSL 3'/ {
-	is MasterKey.new($seed), $xprv, 'seed → master key';
+	is .Blob('TREZOR'), $seed, 'mnemo → seed';
       } else {
-        skip 'master key generation from seed would be too slow without OpenSSL v3+';
+        skip 'seed generation would be too slow without OpenSSL v3+';
       }
-      is .Blob('TREZOR'), $seed, 'mnemo → seed';
     }
   }
 }
