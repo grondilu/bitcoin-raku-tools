@@ -30,6 +30,7 @@ class Mnemonic is export {
     }
   }
   method Str { self.words.join: ' ' }
+  method gist { self.Str }
   method Blob(Str $passphrase = '') {
     constant $c     = 2048;
     constant $dkLen = 64;
