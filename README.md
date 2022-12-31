@@ -62,10 +62,13 @@ say Mnemonic.new: $entropy;    # 的的的的的的的的的的的在
 %*ENV<LANG>='fr_FR';                               
 say Mnemonic.new: $entropy;    # (abaisser abaisser abaisser abaisser abaisser abaisser abaisser abaisser abaisser abaisser abaisser abeille) 
 
-# extract a BIP32-compatible seed
-say Mnemonic.new.Blob;
+# Build a mnemonic object from a mnemonic words list
+my Mnemonic $mnemonic .= new: <harbor control census bulb absurd observe host country bleak divorce fall neglect>;
+
+# extract a BIP32-compatible seed from a mnemonic object
+say $mnemonic.Blob;
 # same, but with a passphrase
-say Mnemonic.new.Blob('sezame');
+say $mnemonic.Blob('sezame');
 ```
 
 ## LICENSE

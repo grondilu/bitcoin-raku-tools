@@ -39,10 +39,10 @@ f585c11aec520db57dd353c69554b21a89b20fb0650966fa0a9d6f74fd989d8f:void come effor
 EOF
   my ($hex-entropy, $joined-words, $hex-seed, $xprv) = .split(/\:/);
   my ($entropy, $seed) = map &hex-to-blob, $hex-entropy, $hex-seed;
-  my $words = $joined-words.words;
+  my @words = $joined-words.words;
   subtest "entropy ← $hex-entropy", {
     given Mnemonic.new: $entropy {
-      is .words, $words, 'entropy → mnemo';
+      is .words, @words, 'entropy → mnemo';
       is MasterKey.new($seed), $xprv, 'seed → master key';
       if $openssl-version ~~ /^'OpenSSL 3'/ {
 	is .Blob('TREZOR'), $seed, 'mnemo → seed';
@@ -50,6 +50,7 @@ EOF
         skip 'seed generation would be too slow without OpenSSL v3+';
       }
     }
+    is Mnemonic.new(@words).words, @words, "Mnemonic construction from words is ok";
   }
 }
 
