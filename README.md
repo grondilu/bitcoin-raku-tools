@@ -38,8 +38,10 @@ my MasterKey $m .= new;
 my MasterKey $m .= new: my $seed = blob8.new: ^256 .roll: 32;
 
 # key derivation
-print $m/0;
-print $m/0/0h;
+say $m/0;
+say $m/0/0h;
+say N($m);
+say N($m/1/0h);
 ```
 
 ### BIP39

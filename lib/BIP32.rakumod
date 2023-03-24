@@ -3,7 +3,15 @@ use Digest::HMAC:auth<grondilu>;
 use Digest::SHA2;
 use Digest::RIPEMD;
 
+use Base58;
 use secp256k1;
+
+# version:	 4 bytes  0
+# depth:	 1 byte   4
+# fingerprint:	 4 bytes  5
+# child-number:  4 bytes  9
+# chain-code:   32 bytes  13
+# key:		33 bytes  45
 
 role xkey {
 
@@ -14,6 +22,7 @@ role xkey {
   has uint8 $.depth;
   has uint32 ($.fingerprint, $.child-number);
   has blob8 $.chain-code;
+    
   submethod TWEAK {
     die "wrong chain code length" unless $!chain-code.elems  == 32;
     die "wrong key length"        unless self.key.elems      == 33;
@@ -30,10 +39,8 @@ role xkey {
   {
     use Digest::SHA2;
     use Digest::RIPEMD;
-    method Str {
-      use Base58;
-      Base58::encode self.Blob ~ (sha256 sha256 self.Blob).subbuf(0, 4);
-    }
+    method Str { Base58::encode self.Blob ~ (sha256 sha256 self.Blob).subbuf(0, 4) }
+    method gist { self.Str }
     method identifier returns Blob { rmd160 sha256 self.Point.Blob; }
   }
 
@@ -51,14 +58,31 @@ class xprv does xkey is export {
 
   {
     use secp256k1;
-    submethod TWEAK { $!key %= G.order }
+    submethod TWEAK { 
+      die "exponent ($!key) out of range" unless $!key ~~ 1..^G.order
+    }
+
     method Point { self.Int*G }
   }
 
-  has UInt $.key handles Int;
+  has UInt $.key handles <Int>;
 
   method version { %*ENV<BITCOIN_TEST> ?? 0x04358394 !! 0x0488ADE4; }
   method key returns Blob { blob8.new: $!key.polymod(256 xx 32).reverse }
+
+  multi method new(blob8 $b where $b.elems == 78+4) {
+    my $version      = $b.subbuf(0, 4).list.reduce(256 * * + *);
+    my $depth        = $b.subbuf(4, 1)[0];
+    my $fingerprint  = $b.subbuf(5, 4).list.reduce(256 * * + *);
+    my $child-number = $b.subbuf(9, 4).list.reduce(256 * * + *);
+    my $chain-code   = $b.subbuf: 13, 32; 
+    my $key          = $b.subbuf(45, 33).list.reduce(256 * * + *);
+    my $checksum     = $b.subbuf: 78;
+    die "wrong version" unless $version == self.version;
+    die "wrong checksum" unless sha256(sha256(.subbuf(0, 78))).subbuf(0, 4) ~~ $checksum;
+    samewith :$depth, :$child-number, :$fingerprint, :$chain-code, :$key;
+  }
+  multi method new(Str $xprv) { samewith Base58::decode $xprv; }
 
 }
 
@@ -112,7 +136,7 @@ multi infix:</>(xprv $k, UInt $i) is export {
     fingerprint    => $k.identifier.subbuf(0, 4).list.reduce(256 * * + *),
     child-number   => $i,
     chain-code     => $right,
-    key            => parse256($left) + $k.Int
+    key            => (parse256($left) + $k.Int) % G.order
   ;
 }
 
@@ -127,4 +151,15 @@ multi infix:</>(xpub $K, UInt $i where * < 2**31) is export {
     child-number   => $i,
     chain-code     => $right,
     Point          => $left.list.reduce(256 * * + *)*G + $K.Point;
+}
+
+subset xkeyStr of Str is export where /^^ <[tx]>(prv|pub) <@Base58::alphabet>+ $$
+  <?{
+    try { ($0 eq 'prv' ?? xprv !! xpub).new: ~$/ }
+    not $!
+  }>
+/ ;
+
+multi infix:</>(xkeyStr $xkey, UInt $i) is export {
+  say $/.made;
 }
