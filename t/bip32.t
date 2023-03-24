@@ -1,7 +1,8 @@
+use Test;
+
+use lib <lib>;
 use BIP32;
 use Base58;
-
-use Test;
 
 subtest {
   my $m = MasterKey.new(blob8.new: ^16);

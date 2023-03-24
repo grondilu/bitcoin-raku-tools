@@ -1,6 +1,9 @@
-use Bitcoin;
-use secp256k1;
 use Test;
+
+use lib <lib>;
+use Bitcoin;
+
+use secp256k1;
 
 # Example 6 from the bitcoin book, chap. 04
 my $key = 0x3aba4162c7251c891207b747840551a71939b0de081f85c4e44cf7c13e41daa6 but Bitcoin::PrivateKey;

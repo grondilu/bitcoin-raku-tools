@@ -1,9 +1,10 @@
+use Test;
+
+use lib <lib>;
 use BIP39;
 use BIP32;
 
 %*ENV<LANG> = 'C';
-
-use Test;
 
 sub hex-to-blob(Str $str where /^[<xdigit>**2]+$/ --> blob8) {
   blob8.new: $str.comb(/../).map({:16($_)})
