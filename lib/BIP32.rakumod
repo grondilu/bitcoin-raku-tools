@@ -1,5 +1,5 @@
 unit module BIP32;
-use Digest::HMAC:auth<grondilu>;
+use Digest::HMAC;
 use Digest::SHA2;
 use Digest::RIPEMD;
 
@@ -100,9 +100,10 @@ class MasterKey is xprv is export {
   multi method new { samewith blob8.new: ^258 .roll: 16 }
   multi method new(Blob $seed) {
     my $sha512 = hmac
-      key => "Bitcoin seed",
-      msg => $seed,
-      hash => &sha512, block-size => 128;
+      "Bitcoin seed",
+      $seed,
+      &sha512,
+      128;
     my ($Il, $Ir) = map { $sha512.subbuf($_, 32) }, 0, 32;
 
     self.bless:
@@ -127,9 +128,9 @@ sub N(xprv $xprv --> xpub) is export {
 multi infix:</>(xprv $k, UInt $i) is export {
   my ($left, $right) = .subbuf(0, 32), .subbuf(32) given 
     hmac
-      key => $k.chain-code,
-      msg => ($i ≥ 2**31 ?? $k.key !! $k.Point.Blob) ~ ser32($i),
-      hash => &sha512, block-size => 128
+      $k.chain-code,
+      ($i ≥ 2**31 ?? $k.key !! $k.Point.Blob) ~ ser32($i),
+      &sha512, 128
   ;
   xprv.new:
     depth          => $k.depth + 1,
@@ -143,7 +144,7 @@ multi infix:</>(xprv $k, UInt $i) is export {
 multi infix:</>(xpub $K, UInt $i where * < 2**31) is export {
 
   my ($left, $right) = .subbuf(0, 32), .subbuf(32) given 
-    hmac(key => $K.chain-code, msg => $K.key ~ ser32($i), hash => &sha512, block-size => 128);
+    hmac($K.chain-code, $K.key ~ ser32($i), &sha512, 128);
 
   xpub.new:
     depth          => $K.depth + 1,

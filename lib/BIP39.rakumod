@@ -46,14 +46,14 @@ class Mnemonic is export {
 	  }, :bin, :out;
     } else {
       use PBKDF2;
-      use Digest::HMAC:auth<grondilu>;
+      use Digest::HMAC;
       use Digest::SHA2;
       LEAVE $*ERR.printf: "\n";
       pbkdf2 self.Str,
 	:$salt,
 	prf => sub ($msg, $key) {
 	  $*ERR.printf: "\rPBKDF2 %{$c.chars}i/%i", $++, $c;
-	  hmac(:$key, :$msg, hash => &sha512, block-size => 128)
+	  hmac($key, $msg, &sha512, 128)
 	},
 	:$c, :$dkLen;
     }

@@ -1,6 +1,6 @@
 {
      "name" : "Bitcoin",
-     "version" : "0.8.0",
+     "version" : "0.9.0",
      "description" : "Bitcoin raku tools.",
      "author" : "Lucien Grondin",
      "auth" : "zef:grondilu",
@@ -12,6 +12,7 @@
      "depends" : [
        "Base58",
        "Digest",
+       "Digest::HMAC",
        "PBKDF2",
        "EC"
      ],
