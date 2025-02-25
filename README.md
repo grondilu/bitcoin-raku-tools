@@ -1,4 +1,4 @@
-[![SparrowCI](https://ci.sparrowhub.io/project/gh-grondilu-bitcoin-raku-tools/badge)](https://ci.sparrowhub.io)
+![Sparky](https://sparky.sparrowhub.io/badge/grondilu-bitcoin-raku-tools?foo=bar)
 
 # Bitcoin raku tools
 
